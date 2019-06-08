@@ -47,7 +47,7 @@
   (sdl2:create-texture *renderer* 'rgb888 'streaming
                        +screen-width+ +screen-height+))
 
-(define +pixels+ (allocate +screen-pixels+))
+(define +pixels+ (allocate (* 3 +screen-pixels+)))
 
 (define (handle-event ev exit-main-loop!)
   (case (sdl2:event-type ev)
