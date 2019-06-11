@@ -3,9 +3,9 @@
         (rename (chicken random)
                 (pseudo-random-integer random))
         (srfi 1)
+        (srfi 4)
         (prefix sdl2 sdl2:)
-        miscmacros
-        vector-lib)
+        miscmacros)
 (declare (uses extras))
 
 (sdl2:set-main-ready!)
@@ -33,6 +33,39 @@
 
 (define *fullscreen?* #f)
 
+(define +palette+ #((102 37 6)
+                    (128 45 5)
+                    (153 54 4)
+                    (178 64 3)
+                    (201 78 5)
+                    (219 94 11)
+                    (234 113 21)
+                    (244 133 31)
+                    (251 153 44)
+                    ; (254 174 61)
+                    ; (254 194 84)
+                    (254 211 112)
+                    (254 225 141)
+                    (255 225 141)
+                    (255 237 166)
+                    (255 245 188)
+                    (255 251 208)
+                    (255 255 229)))
+
+(define +pixels+ (make-u8vector +screen-pixels+ 0))
+(for-each (lambda (i)
+            (u8vector-set! +pixels+ i 16))
+          (iota +screen-width+ (* (- +screen-pixels+ +screen-width+))))
+
+(define +fire-palette+ (sdl2:make-palette 16))
+(for-each (lambda (i)
+            (sdl2:palette-set! +fire-palette+ i (apply sdl2:make-color
+                                                       (vector-ref +palette+ i))))
+          (iota 16))
+
+(define +fire-surf+ (sdl2:make-surface +screen-width+ +screen-height+ 8))
+(sdl2:surface-palette-set! +fire-surf+ +fire-palette+)
+
 (define-values (*window* *renderer*)
   (sdl2:create-window-and-renderer!
     +screen-width+ +screen-height+
@@ -42,12 +75,6 @@
 
 (set! (sdl2:render-viewport *renderer*)
   (R 0 0 +screen-width+ +screen-height+))
-
-(define +texture+
-  (sdl2:create-texture *renderer* 'rgb888 'streaming
-                       +screen-width+ +screen-height+))
-
-(define +pixels+ (allocate (* 3 +screen-pixels+)))
 
 (define (handle-event ev exit-main-loop!)
   (case (sdl2:event-type ev)
@@ -61,27 +88,25 @@
 (set! (sdl2:render-draw-color *renderer*) +black+)
 (sdl2:render-clear! *renderer*)
 
-(set! (sdl2:render-draw-color *renderer*) +white+)
+(define (fire-iter)
+  (map (lambda (e i)
+         (u8vector-set! +pixels+ i (max 0 (- (u8vector-ref +pixels+ (+ i +screen-width+)) 1))))
+       (u8vector->list +pixels+) (iota (- +screen-pixels+ +screen-width+))))
 
 (define (main-loop)
   (let/cc exit-main-loop!
-	(while #t
-	  (sdl2:pump-events!)
-	  (while (sdl2:has-events?)
-		(handle-event (sdl2:poll-event!) exit-main-loop!))
+    (while #t
+      (sdl2:pump-events!)
+      (while (sdl2:has-events?)
+        (handle-event (sdl2:poll-event!) exit-main-loop!))
 
-      ; (let* ((x (random 90))
-      ;        (y (random 90))
-      ;        (offset (+ (* x 3) (* +screen-width+ 3 y))))
-      ;   (pointer-u8-set! (pointer+ +pixels+ (+ offset 0)) (random 256))
-      ;   (pointer-u8-set! (pointer+ +pixels+ (+ offset 1)) (random 256))
-      ;   (pointer-u8-set! (pointer+ +pixels+ (+ offset 2)) (random 256)))
-      (sdl2:update-texture-raw! +texture+ #f (object->pointer +pixels+) (* +screen-width+ 3))
-      (sdl2:render-copy! *renderer* +texture+)
+      (fire-iter)
 
-	  (sdl2:render-present! *renderer*)
-	  (sdl2:delay! 30))))
+      (move-memory! +pixels+ (sdl2:surface-pixels-raw +fire-surf+))
+      (sdl2:blit-surface! +fire-surf+ #f (sdl2:window-surface *window*) #f)
+      (sdl2:update-window-surface! *window*)
+
+      (sdl2:delay! 30))))
 
 (main-loop)
-(free +pixels+)
 
