@@ -6,7 +6,6 @@
         (srfi 4)
         (prefix sdl2 sdl2:)
         miscmacros)
-(declare (uses extras))
 
 (sdl2:set-main-ready!)
 (sdl2:init! '(video timer))
@@ -19,38 +18,31 @@
       (sdl2:quit!)
       (original-handler exception))))
 
-(define C sdl2:make-color)
-(define P sdl2:make-point)
-(define R sdl2:make-rect)
-
-(define +title+ "sdl2")
-(define +screen-width+ 100)
-(define +screen-height+ 100)
+(define +screen-width+ 200)
+(define +screen-height+ 50)
 (define +screen-pixels+ (* +screen-width+ +screen-height+))
-
-(define +white+ (C 255 255 255))
-(define +black+ (C 0 0 0))
 
 (define *fullscreen?* #f)
 
-(define +palette+ #((102 37 6)
-                    (128 45 5)
-                    (153 54 4)
-                    (178 64 3)
-                    (201 78 5)
-                    (219 94 11)
-                    (234 113 21)
-                    (244 133 31)
-                    (251 153 44)
-                    ; (254 174 61)
-                    ; (254 194 84)
-                    (254 211 112)
-                    (254 225 141)
-                    (255 225 141)
-                    (255 237 166)
-                    (255 245 188)
-                    (255 251 208)
-                    (255 255 229)))
+(define +palette+
+  (apply vector
+         (map (lambda (color) (apply sdl2:make-color color))
+              '((0 0 0)
+                (102 37 6)
+                (128 45 5)
+                (153 54 4)
+                (178 64 3)
+                (201 78 5)
+                (219 94 11)
+                (234 113 21)
+                (244 133 31)
+                (251 153 44)
+                (254 174 61)
+                (254 194 84)
+                (254 211 112)
+                (254 225 141)
+                (255 225 141)
+                (255 237 166)))))
 
 (define +pixels+ (make-u8vector +screen-pixels+ 0))
 (for-each (lambda (i)
@@ -58,10 +50,7 @@
           (iota +screen-width+ (* (- +screen-pixels+ +screen-width+))))
 
 (define +fire-palette+ (sdl2:make-palette 16))
-(for-each (lambda (i)
-            (sdl2:palette-set! +fire-palette+ i (apply sdl2:make-color
-                                                       (vector-ref +palette+ i))))
-          (iota 16))
+(sdl2:palette-colors-set! +fire-palette+ +palette+)
 
 (define +fire-surf+ (sdl2:make-surface +screen-width+ +screen-height+ 8))
 (sdl2:surface-palette-set! +fire-surf+ +fire-palette+)
@@ -71,10 +60,10 @@
     +screen-width+ +screen-height+
     (if *fullscreen?* '(fullscreen) '())))
 
-(set! (sdl2:window-title *window*) +title+)
+(set! (sdl2:window-title *window*) "DOOM fire")
 
 (set! (sdl2:render-viewport *renderer*)
-  (R 0 0 +screen-width+ +screen-height+))
+  (sdl2:make-rect 0 0 +screen-width+ +screen-height+))
 
 (define (handle-event ev exit-main-loop!)
   (case (sdl2:event-type ev)
@@ -85,12 +74,10 @@
        ((escape)
         (exit-main-loop! #t))))))
 
-(set! (sdl2:render-draw-color *renderer*) +black+)
-(sdl2:render-clear! *renderer*)
-
 (define (fire-iter)
   (map (lambda (e i)
-         (u8vector-set! +pixels+ i (max 0 (- (u8vector-ref +pixels+ (+ i +screen-width+)) 1))))
+         (let ((below (u8vector-ref +pixels+ (+ i +screen-width+))))
+           (u8vector-set! +pixels+ (+ i (random 2)) (max 0 (+ (- below (random 2)))))))
        (u8vector->list +pixels+) (iota (- +screen-pixels+ +screen-width+))))
 
 (define (main-loop)
