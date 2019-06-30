@@ -1,8 +1,8 @@
 # Fire is coming!
 
-Implementation of DOOM fire effect as described by the [Fabien Sanglard](http://fabiensanglard.net/doom_fire_psx/).
+Implementation of DOOM fire effect as described by [Fabien Sanglard](http://fabiensanglard.net/doom_fire_psx/).
 
-Uses CHICKEN scheme 5.0 and sdl2 egg by the John Croisant.
+Uses CHICKEN scheme 5.0 and sdl2 egg by John Croisant.
 
 ![DOOM fire](/screenshot.png)
 
