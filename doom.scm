@@ -57,8 +57,11 @@
 
 (define-values (*window* *renderer*)
   (sdl2:create-window-and-renderer!
-    +screen-width+ +screen-height+
+    (* 4 +screen-width+) (* 4 +screen-height+)
     (if *fullscreen?* '(fullscreen) '())))
+
+(define +32-surf+ (sdl2:make-surface +screen-width+ +screen-height+ 32))
+(define +stretch-rect+ (sdl2:make-rect 0 0 (* 4 +screen-width+) (* 4 +screen-height+)))
 
 (set! (sdl2:window-title *window*) "DOOM fire")
 
@@ -90,7 +93,8 @@
       (fire-iter)
 
       (move-memory! +pixels+ (sdl2:surface-pixels-raw +fire-surf+))
-      (sdl2:blit-surface! +fire-surf+ #f (sdl2:window-surface *window*) #f)
+      (sdl2:blit-surface! +fire-surf+ #f +32-surf+ #f)
+      (sdl2:blit-scaled! +32-surf+ #f (sdl2:window-surface *window*) +stretch-rect+)
       (sdl2:update-window-surface! *window*)
 
       (sdl2:delay! 30))))
