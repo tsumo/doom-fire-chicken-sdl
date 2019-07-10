@@ -46,7 +46,7 @@
 
 (define +pixels+ (make-u8vector +screen-pixels+ 0))
 (for-each (lambda (i)
-            (u8vector-set! +pixels+ i 16))
+            (u8vector-set! +pixels+ i 15))
           (iota +screen-width+ (* (- +screen-pixels+ +screen-width+))))
 
 (define +fire-palette+ (sdl2:make-palette 16))
